@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AviFeed Tool - Редактор XML фида Авито & Хостинг GitHub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        avito: {
+                            green: '#00aaff',
+                            blue: '#00aaff',
+                            red: '#ff6161',
+                            dark: '#1e2127',
+                            card: '#282c34',
+                            border: '#3a3f4b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbars and styling */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e2127; }
+        ::-webkit-scrollbar-thumb { background: #3e4451; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5263; }
+        .truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-[#181a1f] text-gray-200 min-h-screen font-sans flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-[#21252b] border-b border-[#313640] sticky top-0 z-40 px-6 py-3 shadow-md">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-extrabold px-3 py-1.5 rounded-lg shadow-sm text-lg tracking-wider">
+                        <i class="fa-solid fa-bolt mr-1"></i> AviFeed
+                    </span>
+                    <span class="text-xs bg-blue-900/60 text-blue-300 border border-blue-700/50 px-2 py-0.5 rounded font-mono">v3.0 Avito Autoload</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400 pl-4 border-l border-gray-700">
+                    <span id="statAdsCount" class="font-semibold text-white">295</span> объявлений
+                    <span class="text-gray-600">•</span>
+                    <span id="statCitiesCount" class="font-semibold text-white">85</span> городов
+                    <span class="text-gray-600">•</span>
+                    <span id="statPriceListBadge" class="text-emerald-400 font-medium"><i class="fa-solid fa-check-circle"></i> Прайс-лист активен</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-3">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-200 px-3.5 py-1.5 rounded-lg text-sm font-medium border border-gray-600 transition flex items-center shadow-sm">
+                    <i class="fa-solid fa-file-import mr-2 text-blue-400"></i> Импорт Excel/XML
+                </button>
+                <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xml,.csv" onchange="handleFileUpload(event)">
+
+                <button onclick="downloadXmlFeed()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm shadow-emerald-900/50">
+                    <i class="fa-solid fa-download mr-2"></i> Скачать XML
+                </button>
+
+                <button onclick="openGithubSyncModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm shadow-indigo-900/50">
+                    <i class="fa-brands fa-github mr-2"></i> Публикация в GitHub
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-1 mt-3 -mb-1 overflow-x-auto">
+            <button onclick="switchTab('table')" id="tabBtn-table" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-blue-500 text-blue-400 bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-table-list mr-2"></i> Объявления (<span id="tabCount">295</span>)
+            </button>
+            <button onclick="switchTab('photos')" id="tabBtn-photos" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-images mr-2 text-amber-400"></i> Массовое обновление Фото
+            </button>
+            <button onclick="switchTab('pricelist')" id="tabBtn-pricelist" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-tags mr-2 text-emerald-400"></i> Конструктор Прайс-Листа
+            </button>
+            <button onclick="switchTab('bulk')" id="tabBtn-bulk" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-wand-magic-sparkles mr-2 text-purple-400"></i> Пакетное редактирование
+            </button>
+            <button onclick="switchTab('preview')" id="tabBtn-preview" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-code mr-2 text-cyan-400"></i> XML Фид & Валидатор
+            </button>
+            <button onclick="switchTab('guide')" id="tabBtn-guide" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
+                <i class="fa-solid fa-book-bookmark mr-2 text-rose-400"></i> Инструкция по GitHub Хостингу
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+
+        <!-- TAB 1: ADS TABLE -->
+        <section id="tab-table" class="tab-content space-y-4">
+            <!-- Search and Filter Bar -->
+            <div class="bg-[#21252b] p-4 rounded-xl border border-[#313640] flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center space-x-3 flex-1 min-w-[280px]">
+                    <div class="relative w-full max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-500"></i>
+                        <input type="text" id="searchInput" oninput="filterAds()" placeholder="Поиск по городу, ID, заголовку, телефону..." class="w-full bg-[#181a1f] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <select id="cityFilter" onchange="filterAds()" class="bg-[#181a1f] border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500">
+                        <option value="">Все регионы / города</option>
+                    </select>
+                    <select id="priceListFilter" onchange="filterAds()" class="bg-[#181a1f] border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500">
+                        <option value="">Все статусы прайса</option>
+                        <option value="with_pl">С прайс-листом</option>
+                        <option value="no_pl">Без прайс-листа</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <span id="selectedCount" class="text-sm text-gray-400">Выбрано: 0</span>
+                    <button onclick="bulkEditSelected()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center shadow-sm disabled:opacity-50" id="btnBulkEdit" disabled>
+                        <i class="fa-solid fa-pen-to-square mr-1.5"></i> Действия с выбранными
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ads Table -->
+            <div class="bg-[#21252b] rounded-xl border border-[#313640] overflow-hidden shadow-sm">
+                <div class="overflow-x-auto max-h-[650px]">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-[#1c1f24] text-gray-400 font-semibold sticky top-0 z-20 border-b border-gray-700">
+                            <tr>
+                                <th class="p-3.5 w-10 text-center">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-0">
+                                </th>
+                                <th class="p-3.5 w-16">Фото</th>
+                                <th class="p-3.5 w-44">Город / Регион</th>
+                                <th class="p-3.5 w-32">ID / AvitoId</th>
+                                <th class="p-3.5">Заголовок</th>
+                                <th class="p-3.5 w-24">Цена</th>
+                                <th class="p-3.5 w-36">Прайс-лист</th>
+                                <th class="p-3.5 w-24 text-right">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adsTableBody" class="divide-y divide-gray-800/80 font-normal">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Footer -->
+                <div class="bg-[#1c1f24] px-4 py-3 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+                    <div id="tableInfo">Показано 1-50 из 295</div>
+                    <div class="flex items-center space-x-1" id="paginationControls"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: PHOTO HUB -->
+        <section id="tab-photos" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm">
+                <div class="flex items-start justify-between border-b border-gray-800 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fa-solid fa-camera-retro mr-2.5 text-amber-400"></i> Массовое обновление и ротация фотографий
+                        </h2>
+                        <p class="text-sm text-gray-400 mt-1">
+                            Быстрая замена ссылок на фото во всех 295 объявлениях, перемешивание порядка и смена главной обложки.
+                        </p>
+                    </div>
+                    <div class="bg-blue-950/60 border border-blue-800/50 rounded-lg p-3 text-xs text-blue-200 max-w-md">
+                        <i class="fa-solid fa-circle-info mr-1 text-blue-400"></i>
+                        <strong>Совет для GitHub хостинга:</strong> Вы можете загрузить фотографии в папку <code>images/</code> вашего GitHub репозитория и использовать ссылки: <code>https://&lt;username&gt;.github.io/&lt;repo&gt;/images/1.jpg</code>. Авито скачает их автоматически!
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Column 1: URL Replacement -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                        <h3 class="text-base font-semibold text-white flex items-center">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center mr-2">1</span>
+                            Массовая замена ссылок на фотографии
+                        </h3>
+                        <p class="text-xs text-gray-400">
+                            Вставьте новые ссылки на фотографии. Каждая ссылка с новой строки или через разделитель <code>|</code>. На Авито допускается до 10 фотографий в объявлении.
+                        </p>
+                        <textarea id="bulkPhotoInput" rows="6" placeholder="https://example.com/photo1.jpg
+https://example.com/photo2.jpg
+https://example.com/photo3.jpg" class="w-full bg-[#21252b] border border-gray-700 rounded-lg p-3 text-xs font-mono text-gray-200 focus:outline-none focus:border-blue-500" oninput="previewPhotoInput()"></textarea>
+
+                        <!-- Preview thumbnail grid -->
+                        <div id="photoInputPreview" class="grid grid-cols-5 gap-2 min-h-[50px] p-2 bg-[#21252b] rounded-lg border border-gray-800">
+                            <span class="col-span-5 text-center text-xs text-gray-500 py-3">Предпросмотр фото появится здесь при вводе ссылок</span>
+                        </div>
+
+                        <div class="pt-2 flex flex-wrap gap-2">
+                            <button onclick="applyBulkPhotos(true)" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                                <i class="fa-solid fa-check-double mr-2"></i> Применить ко ВСЕМ 295 объявлениям
+                            </button>
+                            <button onclick="applyBulkPhotos(false)" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                                <i class="fa-solid fa-list-check mr-2"></i> Только к выбранным (<span id="photoSelectedCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Photo Rotation and Anti-Duplicate -->
+                    <div class="space-y-6">
+                        <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-amber-600 text-xs flex items-center justify-center mr-2">2</span>
+                                Умная ротация и уникализация (Anti-Duplicate)
+                            </h3>
+                            <p class="text-xs text-gray-400">
+                                Алгоритмы Авито анализируют схожесть объявлений в разных городах. Перемешивание порядка дополнительных фотографий делает каждую карточку уникальной.
+                            </p>
+                            
+                            <div class="space-y-3 pt-2">
+                                <button onclick="shuffleAllSecondaryPhotos()" class="w-full bg-[#2c313a] hover:bg-[#353b45] text-amber-300 border border-amber-800/60 p-3 rounded-lg text-sm font-medium transition flex items-center justify-between">
+                                    <span class="flex items-center">
+                                        <i class="fa-solid fa-shuffle mr-2.5 text-amber-400 text-base"></i>
+                                        <span>Перемешать фото 2-9 во всех объявлениях</span>
+                                    </span>
+                                    <span class="text-xs bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50">Сохраняет главное фото</span>
+                                </button>
+
+                                <button onclick="rotateAllPhotos()" class="w-full bg-[#2c313a] hover:bg-[#353b45] text-blue-300 border border-blue-800/60 p-3 rounded-lg text-sm font-medium transition flex items-center justify-between">
+                                    <span class="flex items-center">
+                                        <i class="fa-solid fa-rotate mr-2.5 text-blue-400 text-base"></i>
+                                        <span>Сдвинуть главное фото на следующее (+1)</span>
+                                    </span>
+                                    <span class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded border border-blue-700/50">Новая обложка</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Photo Set Distribution -->
+                        <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-purple-600 text-xs flex items-center justify-center mr-2">3</span>
+                                Распределение наборов фото по городам
+                            </h3>
+                            <p class="text-xs text-gray-400">
+                                Если у вас есть несколько разных вариантов наборов фотографий, вставьте их построчно (каждый набор фото на новой строке через <code>|</code>). Система распределит их по очереди между городами.
+                            </p>
+                            <textarea id="photoSetsInput" rows="3" placeholder="Набор 1: url1 | url2 | url3
+Набор 2: url4 | url5 | url6" class="w-full bg-[#21252b] border border-gray-700 rounded-lg p-2.5 text-xs font-mono text-gray-200 focus:outline-none focus:border-blue-500"></textarea>
+                            <button onclick="applyPhotoSets()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                                <i class="fa-solid fa-arrows-split-up-and-left mr-2"></i> Распределить наборы по объявлениям
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PRICELIST BUILDER -->
+        <section id="tab-pricelist" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm">
+                <div class="flex items-start justify-between border-b border-gray-800 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fa-solid fa-list-check mr-2.5 text-emerald-400"></i> Конструктор Прайс-Листа услуг (PriceList)
+                        </h2>
+                        <p class="text-sm text-gray-400 mt-1">
+                            Прайс-лист отображается в специальном интерактивном блоке в карточке объявления на Авито. Позволяет указать точные услуги и цены от.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="loadPricelistPreset('full')" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            <i class="fa-solid fa-magic mr-1"></i> Пресет: Компьютерная помощь
+                        </button>
+                        <button onclick="loadPricelistPreset('cad')" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            <i class="fa-solid fa-drafting-compass mr-1"></i> Пресет: САПР и 3D
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PriceList Items Table -->
+                <div class="space-y-4">
+                    <div class="bg-[#181a1f] rounded-lg border border-gray-800 overflow-hidden">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-[#1c1f24] text-gray-400 font-semibold border-b border-gray-700 text-xs">
+                                <tr>
+                                    <th class="p-3 w-12 text-center">#</th>
+                                    <th class="p-3">Название услуги (до 100 симв.)</th>
+                                    <th class="p-3 w-48">Описание услуги (опц.)</th>
+                                    <th class="p-3 w-32">Стоимость (₽)</th>
+                                    <th class="p-3 w-28 text-center">Цена от</th>
+                                    <th class="p-3 w-36">Единица измерения</th>
+                                    <th class="p-3 w-16 text-center">Удалить</th>
+                                </tr>
+                            </thead>
+                            <tbody id="priceListRows" class="divide-y divide-gray-800/80">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2">
+                        <button onclick="addPriceListRow()" class="bg-[#2c313a] hover:bg-[#353b45] text-emerald-400 border border-emerald-900/60 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                            <i class="fa-solid fa-plus mr-2"></i> Добавить услугу
+                        </button>
+                        <div class="text-xs text-gray-500">
+                            Всего позиций: <span id="priceListTotalCount" class="font-bold text-gray-300">0</span> / 50 (лимит Авито)
+                        </div>
+                    </div>
+
+                    <!-- Action Bar for PriceList -->
+                    <div class="bg-[#181a1f] p-4 rounded-xl border border-gray-800 mt-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="text-xs text-gray-400">
+                            Формат в XML фиде: <code class="bg-[#21252b] px-2 py-1 rounded text-emerald-400 font-mono">Услуга|Описание|Цена|ЦенаОт|ТипСтоимости</code>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="applyPriceList(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition flex items-center shadow-md shadow-emerald-950/60">
+                                <i class="fa-solid fa-check-double mr-2"></i> Применить прайс ко ВСЕМ 295 объявлениям
+                            </button>
+                            <button onclick="applyPriceList(false)" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-200 border border-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center">
+                                <i class="fa-solid fa-filter mr-2"></i> Только к выбранным (<span id="plSelectedCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: BULK OPERATIONS -->
+        <section id="tab-bulk" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm">
+                <h2 class="text-xl font-bold text-white mb-2 flex items-center">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2.5 text-purple-400"></i> Пакетное изменение параметров объявлений
+                </h2>
+                <p class="text-sm text-gray-400 mb-6">
+                    Изменение цен, контактов, графика работы и описания одновременно во всей базе объявлений.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Price Adjust -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                        <h3 class="text-sm font-semibold text-white flex items-center">
+                            <i class="fa-solid fa-ruble-sign mr-2 text-green-400"></i> Коррекция цен
+                        </h3>
+                        <p class="text-xs text-gray-400">Установить фиксированную цену или изменить на % для всех объявлений.</p>
+                        <div class="space-y-2">
+                            <div class="flex space-x-2">
+                                <input type="number" id="bulkPriceFixed" placeholder="Новая цена (руб)" class="w-full bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                                <button onclick="applyBulkPriceFixed()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs">Задать</button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="number" id="bulkPricePercent" placeholder="Изменить на % (+10 / -10)" class="w-full bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                                <button onclick="applyBulkPricePercent()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs">%</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact & Manager Adjust -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                        <h3 class="text-sm font-semibold text-white flex items-center">
+                            <i class="fa-solid fa-phone mr-2 text-blue-400"></i> Контакты и связь
+                        </h3>
+                        <p class="text-xs text-gray-400">Быстрая сменя телефона или способа связи.</p>
+                        <div class="space-y-2">
+                            <input type="text" id="bulkPhone" placeholder="Новый телефон (79991234567)" class="w-full bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                            <select id="bulkContactMethod" class="w-full bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                                <option value="По телефону и в сообщениях">По телефону и в сообщениях</option>
+                                <option value="По телефону">По телефону</option>
+                                <option value="В сообщениях">В сообщениях</option>
+                            </select>
+                            <button onclick="applyBulkContacts()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded text-xs">Применить контакты</button>
+                        </div>
+                    </div>
+
+                    <!-- Working Hours & Schedule -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                        <h3 class="text-sm font-semibold text-white flex items-center">
+                            <i class="fa-solid fa-clock mr-2 text-amber-400"></i> Время и дни работы
+                        </h3>
+                        <p class="text-xs text-gray-400">Настройка графика (WorkDays, WorkTimeFrom, WorkTimeTo).</p>
+                        <div class="space-y-2">
+                            <div class="flex space-x-2">
+                                <input type="text" id="bulkTimeFrom" value="00:00" placeholder="С (08:00)" class="w-1/2 bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                                <input type="text" id="bulkTimeTo" value="23:30" placeholder="До (22:00)" class="w-1/2 bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                            </div>
+                            <input type="text" id="bulkDays" value="пн. | вт. | ср. | чт. | пт. | сб. | вс." class="w-full bg-[#21252b] border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200">
+                            <button onclick="applyBulkSchedule()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded text-xs">Установить график</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: XML PREVIEW & VALIDATOR -->
+        <section id="tab-preview" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fa-solid fa-check-shield mr-2.5 text-emerald-400"></i> Проверка валидности и предпросмотр XML-фида
+                        </h2>
+                        <p class="text-sm text-gray-400 mt-1">
+                            Готовый фид для загрузки на GitHub и подключения в Автозагрузку Авито.
+                        </p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="runValidator()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                            <i class="fa-solid fa-stethoscope mr-2"></i> Проверить структуру
+                        </button>
+                        <button onclick="downloadXmlFeed()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                            <i class="fa-solid fa-download mr-2"></i> Скачать avito_feed.xml
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Validation Status Alert -->
+                <div id="validationResult" class="p-4 rounded-lg bg-emerald-950/50 border border-emerald-800/80 text-emerald-200 flex items-start space-x-3 text-sm">
+                    <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5 text-base"></i>
+                    <div>
+                        <div class="font-bold">Структура XML фида соответствует требованиям Avito v3!</div>
+                        <div class="text-xs text-emerald-300/80 mt-0.5">Все 295 объявлений содержат обязательные теги: Id, Category, Title (до 50 симв.), Description (с CDATA), Images, Address, ServiceType, ServiceSubtype.</div>
+                    </div>
+                </div>
+
+                <!-- XML Code Viewer -->
+                <div class="relative">
+                    <button onclick="copyXmlCode()" class="absolute right-3 top-3 bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-3 py-1 rounded text-xs transition">
+                        <i class="fa-solid fa-copy mr-1"></i> Копировать XML
+                    </button>
+                    <textarea id="xmlCodePreview" rows="18" readonly class="w-full bg-[#181a1f] border border-gray-800 rounded-lg p-4 font-mono text-xs text-gray-300 focus:outline-none leading-relaxed"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: GITHUB HOSTING GUIDE -->
+        <section id="tab-guide" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fa-brands fa-github mr-2.5 text-purple-400"></i> Инструкция: Как настроить хостинг XML-фида на GitHub для Авито
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Полное руководство по размещению вашего фида на GitHub Pages и связке с личным кабинетом Авито Автозагрузки.
+                    </p>
+                </div>
+
+                <!-- Step 1 -->
+                <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center">1</span>
+                        <h3 class="text-base font-semibold text-white">Создайте репозиторий на GitHub</h3>
+                    </div>
+                    <div class="pl-10 text-sm text-gray-300 space-y-2">
+                        <p>1. Перейдите на <a href="https://github.com/new" target="_blank" class="text-blue-400 underline">github.com/new</a>.</p>
+                        <p>2. Укажите имя репозитория, например: <code class="bg-[#282c34] text-blue-300 px-2 py-0.5 rounded font-mono">avito-feed</code>.</p>
+                        <p>3. Выберите тип: <strong>Public</strong> (публичный репозиторий необходим для бесплатного GitHub Pages).</p>
+                        <p>4. Нажмите <strong>«Create repository»</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center">2</span>
+                        <h3 class="text-base font-semibold text-white">Загрузите файлы проекта</h3>
+                    </div>
+                    <div class="pl-10 text-sm text-gray-300 space-y-2">
+                        <p>Загрузите в корень репозитория файл <code>avito_feed.xml</code> и данный редактор <code>index.html</code>:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-xs text-gray-400">
+                            <li><strong class="text-gray-200">Через веб-интерфейс:</strong> Нажмите «Add file» → «Upload files» → перетащите файлы и нажмите «Commit changes».</li>
+                            <li><strong class="text-gray-200">Через прямое подключение в этом редакторе:</strong> Нажмите кнопку «Публикация в GitHub» в правом верхнем углу, введите ваш Personal Access Token и нажмите «Опубликовать» — файл загрузится автоматически!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center">3</span>
+                        <h3 class="text-base font-semibold text-white">Включите GitHub Pages (получите постоянную ссылку)</h3>
+                    </div>
+                    <div class="pl-10 text-sm text-gray-300 space-y-2">
+                        <p>1. В вашем репозитории перейдите во вкладку <strong>Settings</strong> (Настройки) → слева раздел <strong>Pages</strong>.</p>
+                        <p>2. В блоке <strong>Build and deployment</strong> выберите:</p>
+                        <ul class="list-disc pl-5 text-xs text-gray-400">
+                            <li>Source: <strong>Deploy from a branch</strong></li>
+                            <li>Branch: <strong>main</strong> (или master), папка: <strong>/ (root)</strong></li>
+                        </ul>
+                        <p>3. Нажмите <strong>Save</strong>. Через 1-2 минуты GitHub опубликует ваш фид.</p>
+                        <div class="p-3 bg-[#282c34] rounded border border-gray-700 font-mono text-xs text-emerald-400">
+                            Ваша ссылка для Авито будет иметь вид:<br>
+                            <strong>https://&lt;ВАШ_ЛОГИН&gt;.github.io/&lt;ИМЯ_РЕПОЗИТОРИЯ&gt;/avito_feed.xml</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center">4</span>
+                        <h3 class="text-base font-semibold text-white">Подключите ссылку в кабинете Авито</h3>
+                    </div>
+                    <div class="pl-10 text-sm text-gray-300 space-y-2">
+                        <p>1. Зайдите в кабинет <strong>Авито для бизнеса</strong> → раздел <strong>«Автозагрузка»</strong> → <strong>«Настройки»</strong>.</p>
+                        <p>2. Выберите способ загрузки: <strong>«По расписанию»</strong> (или «По ссылке»).</p>
+                        <p>3. Вставьте вашу ссылку на GitHub Pages (из шага 3).</p>
+                        <p>4. Настройте время автозагрузки (например, ежедневно в 09:00 и 18:00) и введите email для отчетов об обработке.</p>
+                        <p>5. Нажмите <strong>«Сохранить»</strong>. Авито скачает фид, проверит объявления и начнет автопубликацию!</p>
+                    </div>
+                </div>
+
+                <!-- Why GitHub Pages vs Raw -->
+                <div class="bg-blue-950/40 p-5 rounded-lg border border-blue-800/60 space-y-2 text-xs text-blue-200">
+                    <h4 class="font-bold text-sm text-blue-300 flex items-center">
+                        <i class="fa-solid fa-lightbulb mr-2 text-amber-400"></i> Почему именно GitHub Pages, а не raw.githubusercontent.com?
+                    </h4>
+                    <p>
+                        • <strong>Корректный заголовок:</strong> GitHub Pages отдает <code>Content-Type: application/xml; charset=utf-8</code>, что гарантирует мгновенное распознавание валидатором Авито без предупреждений о типе файла.<br>
+                        • <strong>Без ограничений скорости:</strong> GitHub Pages работает на глобальном CDN (Fastly), где отсутствуют жесткие ограничения на скачивание роботами-парсерами.<br>
+                        • <strong>Мгновенное обновление:</strong> Как только вы коммитите изменения в файл, они появляются в течение 30-60 секунд.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Edit Single Ad -->
+    <div id="editAdModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#21252b] border border-gray-700 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-[#1c1f24]">
+                <h3 class="font-bold text-white text-base flex items-center" id="editModalTitle">
+                    <i class="fa-solid fa-pen-to-square mr-2 text-blue-400"></i> Редактирование объявления
+                </h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 flex-1 text-sm">
+                <input type="hidden" id="editAdIndex">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">ID объявления (внутренний)</label>
+                        <input type="text" id="editAdId" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-mono text-gray-200" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Avito ID (номер на Авито)</label>
+                        <input type="text" id="editAdAvitoId" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-mono text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Цена (₽)</label>
+                        <input type="number" id="editAdPrice" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-semibold text-emerald-400">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Заголовок (до 50 символов)</label>
+                        <input type="text" id="editAdTitle" maxlength="50" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Город / Адрес</label>
+                        <input type="text" id="editAdAddress" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Ссылки на фото (через |)</label>
+                    <textarea id="editAdImages" rows="3" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-mono text-gray-200"></textarea>
+                    <div id="editImagesPreview" class="flex gap-2 overflow-x-auto py-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Прайс-лист (Услуга||Цена|Да|за услугу)</label>
+                    <textarea id="editAdPriceList" rows="3" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-mono text-gray-200"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Описание (HTML / Текст)</label>
+                    <textarea id="editAdDescription" rows="8" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs font-mono text-gray-300"></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 border-t border-gray-700 bg-[#1c1f24] flex items-center justify-between">
+                <span class="text-xs text-gray-500" id="editAdStatus">Статус: Готово к сохранению</span>
+                <div class="flex space-x-3">
+                    <button onclick="closeEditModal()" class="px-4 py-2 rounded text-xs font-medium text-gray-300 hover:bg-gray-700">Отмена</button>
+                    <button onclick="saveSingleAd()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded text-xs font-medium">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: GitHub Direct Sync -->
+    <div id="githubModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#21252b] border border-gray-700 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-[#1c1f24]">
+                <h3 class="font-bold text-white text-base flex items-center">
+                    <i class="fa-brands fa-github mr-2 text-purple-400"></i> Прямая синхронизация с GitHub
+                </h3>
+                <button onclick="closeGithubModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 text-sm">
+                <p class="text-xs text-gray-400">
+                    Настройте прямой коммит обновленного XML-фида в ваш GitHub репозиторий через GitHub API. Без установки Git и консоли!
+                </p>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">GitHub Personal Access Token (classic или fine-grained с правами repo/contents)</label>
+                    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2.5 text-xs font-mono text-gray-200 focus:border-blue-500 focus:outline-none">
+                    <div class="text-[11px] text-gray-500 mt-1">Токен хранится только в вашем браузере (localStorage).</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Владелец (Username / Org)</label>
+                        <input type="text" id="ghOwner" placeholder="username" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Репозиторий (Repo Name)</label>
+                        <input type="text" id="ghRepo" placeholder="avito-feed" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Ветка (Branch)</label>
+                        <input type="text" id="ghBranch" value="main" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Путь к файлу фида</label>
+                        <input type="text" id="ghFilePath" value="avito_feed.xml" class="w-full bg-[#181a1f] border border-gray-700 rounded p-2 text-xs text-gray-200">
+                    </div>
+                </div>
+
+                <div id="ghStatusBox" class="hidden p-3 rounded text-xs font-mono"></div>
+            </div>
+
+            <div class="px-6 py-3 border-t border-gray-700 bg-[#1c1f24] flex items-center justify-between">
+                <button onclick="testGithubConnection()" class="text-xs text-blue-400 hover:underline">
+                    <i class="fa-solid fa-plug mr-1"></i> Проверить доступ
+                </button>
+                <div class="flex space-x-2">
+                    <button onclick="closeGithubModal()" class="px-3.5 py-1.5 rounded text-xs font-medium text-gray-300 hover:bg-gray-700">Отмена</button>
+                    <button onclick="pushFeedToGithub()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded text-xs font-semibold flex items-center">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Опубликовать фид
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Scripts -->
+    <script src="ads_data.js"></script>
+    <script>
+        // Global state
+        let allAds = [];
+        let filteredAds = [];
+        let selectedIndices = new Set();
+        let currentPage = 1;
+        const pageSize = 50;
+
+        // Price list builder state
+        let priceListItems = [
+            { service: "Установка операционной системы Windows / macOS", desc: "", price: 1000, isFrom: true, unit: "за услугу" },
+            { service: "Установка офисных программ (MS Office, Word, Excel)", desc: "", price: 500, isFrom: true, unit: "за услугу" },
+            { service: "Установка графических программ (Photoshop, CorelDRAW)", desc: "", price: 700, isFrom: true, unit: "за услугу" },
+            { service: "Установка программ видеомонтажа (Premiere, DaVinci)", desc: "", price: 800, isFrom: true, unit: "за услугу" },
+            { service: "Установка САПР и 3D-программ (AutoCAD, 3ds Max, Archicad)", desc: "", price: 1200, isFrom: true, unit: "за услугу" },
+            { service: "Настройка программ для мебели и ЧПУ (Базис, Artcam, NC-Studio)", desc: "", price: 1500, isFrom: true, unit: "за услугу" },
+            { service: "Настройка ЭЦП, КриптоПро и сертификатов для торгов и ФНС", desc: "", price: 1000, isFrom: true, unit: "за услугу" },
+            { service: "Удаленная компьютерная помощь и диагностика", desc: "", price: 500, isFrom: true, unit: "за услугу" }
+        ];
+
+        // Initialize application
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.INITIAL_ADS && window.INITIAL_ADS.length > 0) {
+                allAds = JSON.parse(JSON.stringify(window.INITIAL_ADS));
+            } else {
+                console.log("No INITIAL_ADS found, waiting for import.");
+            }
+            initApp();
+        });
+
+        function initApp() {
+            populateCityFilter();
+            filterAds();
+            renderPriceListTable();
+            renderXmlPreview();
+            loadGithubSettings();
+            updateGlobalStats();
+        }
+
+        function updateGlobalStats() {
+            document.getElementById('statAdsCount').innerText = allAds.length;
+            document.getElementById('tabCount').innerText = allAds.length;
+
+            const cities = new Set(allAds.map(a => (a.Address || '').split(',')[0].trim()).filter(Boolean));
+            document.getElementById('statCitiesCount').innerText = cities.size;
+
+            const withPl = allAds.filter(a => a.PriceList && a.PriceList.trim().length > 0).length;
+            const plBadge = document.getElementById('statPriceListBadge');
+            if (withPl === allAds.length) {
+                plBadge.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400"></i> Прайс во всех ${withPl}`;
+            } else {
+                plBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Прайс в ${withPl}/${allAds.length}`;
+            }
+        }
+
+        function populateCityFilter() {
+            const select = document.getElementById('cityFilter');
+            const cities = new Set();
+            allAds.forEach(a => {
+                if (a.Address) {
+                    const c = a.Address.split(',')[0].trim();
+                    if (c) cities.add(c);
+                }
+            });
+
+            select.innerHTML = '<option value="">Все регионы / города (' + cities.size + ')</option>';
+            Array.from(cities).sort().forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.innerText = c;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterAds() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const city = document.getElementById('cityFilter').value;
+            const plStatus = document.getElementById('priceListFilter').value;
+
+            filteredAds = allAds.filter((ad, originalIndex) => {
+                // Search query matching
+                if (query) {
+                    const matchId = (ad.Id || '').toLowerCase().includes(query);
+                    const matchAvitoId = (ad.AvitoId || '').toLowerCase().includes(query);
+                    const matchTitle = (ad.Title || '').toLowerCase().includes(query);
+                    const matchAddress = (ad.Address || '').toLowerCase().includes(query);
+                    const matchPhone = (ad.ContactPhone || '').toLowerCase().includes(query);
+                    if (!matchId && !matchAvitoId && !matchTitle && !matchAddress && !matchPhone) return false;
+                }
+
+                // City filter
+                if (city && !(ad.Address || '').includes(city)) {
+                    return false;
+                }
+
+                // PriceList filter
+                if (plStatus === 'with_pl' && (!ad.PriceList || !ad.PriceList.trim())) return false;
+                if (plStatus === 'no_pl' && ad.PriceList && ad.PriceList.trim()) return false;
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderAdsTable();
+        }
+
+        function renderAdsTable() {
+            const tbody = document.getElementById('adsTableBody');
+            tbody.innerHTML = '';
+
+            const startIdx = (currentPage - 1) * pageSize;
+            const endIdx = Math.min(startIdx + pageSize, filteredAds.length);
+            const pageItems = filteredAds.slice(startIdx, endIdx);
+
+            document.getElementById('tableInfo').innerText = `Показано ${filteredAds.length > 0 ? startIdx + 1 : 0}-${endIdx} из ${filteredAds.length}`;
+            renderPagination(filteredAds.length);
+
+            if (pageItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">Объявления не найдены</td></tr>`;
+                return;
+            }
+
+            pageItems.forEach((ad) => {
+                const origIndex = allAds.indexOf(ad);
+                const isSelected = selectedIndices.has(origIndex);
+
+                // Photo preview
+                const imgUrls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                const firstImg = imgUrls[0] || '';
+                const imgCount = imgUrls.length;
+
+                // PriceList info
+                const pl = (ad.PriceList || '').trim();
+                const plLines = pl ? pl.split('
+').filter(Boolean) : [];
+                const plBadge = plLines.length > 0 
+                    ? `<span class="badge bg-emerald-950 text-emerald-300 border border-emerald-800"><i class="fa-solid fa-tags mr-1"></i> ${plLines.length} усл.</span>` 
+                    : `<span class="badge bg-gray-800 text-gray-400 border border-gray-700">Нет</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-[#282c34]/70 transition cursor-pointer ${isSelected ? 'bg-blue-950/20' : ''}`;
+                tr.innerHTML = `
+                    <td class="p-3 text-center" onclick="event.stopPropagation()">
+                        <input type="checkbox" onchange="toggleSelect(${origIndex}, this)" ${isSelected ? 'checked' : ''} class="rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-0">
+                    </td>
+                    <td class="p-3">
+                        <div class="relative w-11 h-11 rounded bg-gray-800 overflow-hidden border border-gray-700 flex items-center justify-center">
+                            ${firstImg ? `<img src="${firstImg}" class="w-full h-full object-cover" onerror="this.src=''; this.parentElement.innerHTML='<i class=\'fa-regular fa-image text-gray-600\'></i>'">` : `<i class="fa-regular fa-image text-gray-600"></i>`}
+                            <span class="absolute bottom-0 right-0 bg-black/80 text-[10px] text-gray-300 px-1 font-mono">${imgCount}</span>
+                        </div>
+                    </td>
+                    <td class="p-3 font-medium text-gray-200">
+                        <div class="truncate max-w-[170px]" title="${ad.Address || ''}">${ad.Address || '—'}</div>
+                        <div class="text-[11px] text-gray-500">${ad.ManagerName || 'Чуев Алексей'}</div>
+                    </td>
+                    <td class="p-3 text-xs font-mono">
+                        <div class="text-blue-400 font-semibold">${ad.Id}</div>
+                        <div class="text-gray-500">№ ${ad.AvitoId || '—'}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="truncate-2 font-medium text-gray-200" title="${ad.Title}">${ad.Title}</div>
+                    </td>
+                    <td class="p-3 font-semibold text-emerald-400 whitespace-nowrap">
+                        ${ad.Price ? ad.Price + ' ₽' : '—'}
+                    </td>
+                    <td class="p-3">
+                        ${plBadge}
+                    </td>
+                    <td class="p-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                        <button onclick="openEditModal(${origIndex})" class="text-gray-400 hover:text-blue-400 p-1.5 transition" title="Редактировать">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </td>
+                `;
+                tr.onclick = () => openEditModal(origIndex);
+                tbody.appendChild(tr);
+            });
+
+            updateSelectedDisplay();
+        }
+
+        function renderPagination(totalCount) {
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = '';
+            const totalPages = Math.ceil(totalCount / pageSize);
+            if (totalPages <= 1) return;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `px-2 py-1 rounded bg-[#21252b] border border-gray-700 hover:bg-gray-700 ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}`;
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+            prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderAdsTable(); } };
+            controls.appendChild(prevBtn);
+
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                const btn = document.createElement('button');
+                btn.className = `px-2.5 py-1 rounded text-xs border ${currentPage === i ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-[#21252b] border-gray-700 hover:bg-gray-700 text-gray-300'}`;
+                btn.innerText = i;
+                btn.onclick = () => { currentPage = i; renderAdsTable(); };
+                controls.appendChild(btn);
+            }
+
+            if (totalPages > 5) {
+                const dots = document.createElement('span');
+                dots.innerText = '...';
+                dots.className = 'px-1 text-gray-500';
+                controls.appendChild(dots);
+
+                const lastBtn = document.createElement('button');
+                lastBtn.className = `px-2.5 py-1 rounded text-xs border ${currentPage === totalPages ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-[#21252b] border-gray-700 hover:bg-gray-700 text-gray-300'}`;
+                lastBtn.innerText = totalPages;
+                lastBtn.onclick = () => { currentPage = totalPages; renderAdsTable(); };
+                controls.appendChild(lastBtn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `px-2 py-1 rounded bg-[#21252b] border border-gray-700 hover:bg-gray-700 ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`;
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+            nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderAdsTable(); } };
+            controls.appendChild(nextBtn);
+        }
+
+        function toggleSelect(origIndex, checkbox) {
+            if (checkbox.checked) {
+                selectedIndices.add(origIndex);
+            } else {
+                selectedIndices.delete(origIndex);
+            }
+            updateSelectedDisplay();
+        }
+
+        function toggleSelectAll(masterCheckbox) {
+            if (masterCheckbox.checked) {
+                filteredAds.forEach(ad => {
+                    const idx = allAds.indexOf(ad);
+                    if (idx !== -1) selectedIndices.add(idx);
+                });
+            } else {
+                selectedIndices.clear();
+            }
+            renderAdsTable();
+        }
+
+        function updateSelectedDisplay() {
+            const count = selectedIndices.size;
+            document.getElementById('selectedCount').innerText = `Выбрано: ${count}`;
+            document.getElementById('photoSelectedCount').innerText = count;
+            document.getElementById('plSelectedCount').innerText = count;
+            document.getElementById('btnBulkEdit').disabled = count === 0;
+        }
+
+        // TAB SWITCHING
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400', 'bg-[#282c34]');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+                activeBtn.classList.add('border-blue-500', 'text-blue-400', 'bg-[#282c34]');
+            }
+
+            if (tabId === 'preview') {
+                renderXmlPreview();
+            }
+        }
+
+        // PHOTO MANAGER FUNCTIONS
+        function previewPhotoInput() {
+            const raw = document.getElementById('bulkPhotoInput').value;
+            const container = document.getElementById('photoInputPreview');
+            const urls = raw.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
+
+            if (urls.length === 0) {
+                container.innerHTML = '<span class="col-span-5 text-center text-xs text-gray-500 py-3">Предпросмотр фото появится здесь при вводе ссылок</span>';
+                return;
+            }
+
+            container.innerHTML = '';
+            urls.slice(0, 10).forEach((u, i) => {
+                const div = document.createElement('div');
+                div.className = 'relative w-full h-16 bg-gray-800 rounded border border-gray-700 overflow-hidden';
+                div.innerHTML = `
+                    <img src="${u}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<span class=\'text-[10px] text-red-400 p-1 flex items-center justify-center h-full\'>Ошибка</span>'">
+                    <span class="absolute top-1 left-1 bg-black/70 text-[9px] px-1 rounded text-white">${i + 1}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function applyBulkPhotos(forAll) {
+            const raw = document.getElementById('bulkPhotoInput').value;
+            const urls = raw.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
+
+            if (urls.length === 0) {
+                showToast('Ошибка', 'Введите хотя бы одну ссылку на фото', 'error');
+                return;
+            }
+
+            const joined = urls.slice(0, 10).join(' | ');
+            let targetAds = [];
+
+            if (forAll) {
+                targetAds = allAds;
+            } else {
+                if (selectedIndices.size === 0) {
+                    showToast('Внимание', 'Не выбрано ни одного объявления в таблице!', 'warning');
+                    return;
+                }
+                targetAds = Array.from(selectedIndices).map(i => allAds[i]);
+            }
+
+            targetAds.forEach(ad => {
+                ad.ImageUrls = joined;
+            });
+
+            showToast('Успех', `Фотографии обновлены в ${targetAds.length} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+            updateGlobalStats();
+        }
+
+        function shuffleAllSecondaryPhotos() {
+            let count = 0;
+            allAds.forEach(ad => {
+                const urls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                if (urls.length > 2) {
+                    const first = urls[0];
+                    const rest = urls.slice(1);
+                    // Fisher-Yates shuffle
+                    for (let i = rest.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [rest[i], rest[j]] = [rest[j], rest[i]];
+                    }
+                    ad.ImageUrls = [first, ...rest].join(' | ');
+                    count++;
+                }
+            });
+            showToast('Ротация завершена', `Перемешан порядок фото в ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function rotateAllPhotos() {
+            let count = 0;
+            allAds.forEach(ad => {
+                const urls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                if (urls.length > 1) {
+                    const first = urls.shift();
+                    urls.push(first);
+                    ad.ImageUrls = urls.join(' | ');
+                    count++;
+                }
+            });
+            showToast('Обложки сдвинуты', `Новая главная фотография установлена во всех ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function applyPhotoSets() {
+            const raw = document.getElementById('photoSetsInput').value;
+            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            if (lines.length === 0) {
+                showToast('Ошибка', 'Введите хотя бы один набор ссылок', 'error');
+                return;
+            }
+
+            allAds.forEach((ad, idx) => {
+                const setLine = lines[idx % lines.length];
+                const urls = setLine.split('|').map(s => s.trim()).filter(Boolean);
+                ad.ImageUrls = urls.slice(0, 10).join(' | ');
+            });
+
+            showToast('Успех', `Распределено ${lines.length} фотосетов по ${allAds.length} объявлениям!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        // PRICELIST MANAGER FUNCTIONS
+        function renderPriceListTable() {
+            const tbody = document.getElementById('priceListRows');
+            tbody.innerHTML = '';
+
+            priceListItems.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-[#21252b] transition';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-center text-xs text-gray-500 font-mono">${idx + 1}</td>
+                    <td class="p-2.5">
+                        <input type="text" value="${escapeHtml(item.service)}" oninput="updatePriceListItem(${idx}, 'service', this.value)" class="w-full bg-[#21252b] border border-gray-700 rounded p-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500">
+                    </td>
+                    <td class="p-2.5">
+                        <input type="text" value="${escapeHtml(item.desc)}" placeholder="не обязательно" oninput="updatePriceListItem(${idx}, 'desc', this.value)" class="w-full bg-[#21252b] border border-gray-700 rounded p-1.5 text-xs text-gray-300 focus:outline-none focus:border-blue-500">
+                    </td>
+                    <td class="p-2.5">
+                        <input type="number" value="${item.price}" oninput="updatePriceListItem(${idx}, 'price', this.value)" class="w-full bg-[#21252b] border border-gray-700 rounded p-1.5 text-xs font-semibold text-emerald-400 focus:outline-none focus:border-blue-500">
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="checkbox" ${item.isFrom ? 'checked' : ''} onchange="updatePriceListItem(${idx}, 'isFrom', this.checked)" class="rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-0">
+                    </td>
+                    <td class="p-2.5">
+                        <select onchange="updatePriceListItem(${idx}, 'unit', this.value)" class="w-full bg-[#21252b] border border-gray-700 rounded p-1.5 text-xs text-gray-300 focus:outline-none focus:border-blue-500">
+                            <option value="за услугу" ${item.unit === 'за услугу' ? 'selected' : ''}>за услугу</option>
+                            <option value="за час" ${item.unit === 'за час' ? 'selected' : ''}>за час</option>
+                            <option value="за единицу" ${item.unit === 'за единицу' ? 'selected' : ''}>за единицу</option>
+                            <option value="за выезд" ${item.unit === 'за выезд' ? 'selected' : ''}>за выезд</option>
+                            <option value="за день" ${item.unit === 'за день' ? 'selected' : ''}>за день</option>
+                            <option value="за месяц" ${item.unit === 'за месяц' ? 'selected' : ''}>за месяц</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="removePriceListRow(${idx})" class="text-gray-500 hover:text-red-400 transition" title="Удалить позицию">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('priceListTotalCount').innerText = priceListItems.length;
+        }
+
+        function updatePriceListItem(idx, field, val) {
+            priceListItems[idx][field] = val;
+        }
+
+        function addPriceListRow() {
+            if (priceListItems.length >= 50) {
+                showToast('Лимит Авито', 'В прайс-листе нельзя добавить больше 50 услуг!', 'warning');
+                return;
+            }
+            priceListItems.push({ service: "Новая услуга", desc: "", price: 500, isFrom: true, unit: "за услугу" });
+            renderPriceListTable();
+        }
+
+        function removePriceListRow(idx) {
+            priceListItems.splice(idx, 1);
+            renderPriceListTable();
+        }
+
+        function formatPriceListString() {
+            return priceListItems.map(it => {
+                const s = it.service.trim();
+                const d = it.desc ? it.desc.trim() : '';
+                const p = it.price || 0;
+                const fromStr = it.isFrom ? 'Да' : 'Нет';
+                const u = it.unit || 'за услугу';
+                return `${s}|${d}|${p}|${fromStr}|${u}`;
+            }).join('\n');
+        }
+
+        function applyPriceList(forAll) {
+            const formatted = formatPriceListString();
+            let targets = [];
+
+            if (forAll) {
+                targets = allAds;
+            } else {
+                if (selectedIndices.size === 0) {
+                    showToast('Внимание', 'Не выбрано ни одного объявления в таблице!', 'warning');
+                    return;
+                }
+                targets = Array.from(selectedIndices).map(i => allAds[i]);
+            }
+
+            targets.forEach(ad => {
+                ad.PriceList = formatted;
+            });
+
+            showToast('Успех', `Прайс-лист применён к ${targets.length} объявлениям!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+            updateGlobalStats();
+        }
+
+        function loadPricelistPreset(type) {
+            if (type === 'full') {
+                priceListItems = [
+                    { service: "Установка операционной системы Windows / macOS", desc: "Установка под ключ с драйверами", price: 1000, isFrom: true, unit: "за услугу" },
+                    { service: "Установка офисных программ (MS Office, Word, Excel)", desc: "Бессрочная активация", price: 500, isFrom: true, unit: "за услугу" },
+                    { service: "Установка графических программ (Photoshop, CorelDRAW)", desc: "Все версии", price: 700, isFrom: true, unit: "за услугу" },
+                    { service: "Установка программ видеомонтажа (Premiere, DaVinci)", desc: "С плагинами", price: 800, isFrom: true, unit: "за услугу" },
+                    { service: "Установка САПР и 3D (AutoCAD, 3ds Max, Archicad)", desc: "Профессиональные пакеты", price: 1200, isFrom: true, unit: "за услугу" },
+                    { service: "Настройка программ мебели и ЧПУ (Базис, Artcam)", desc: "Постпроцессоры и базы", price: 1500, isFrom: true, unit: "за услугу" },
+                    { service: "Настройка ЭЦП и сертификатов КриптоПро", desc: "Для торгов, ФНС, СБИС", price: 1000, isFrom: true, unit: "за услугу" },
+                    { service: "Удаленная помощь и диагностика", desc: "Через AnyDesk / RuDesktop", price: 500, isFrom: true, unit: "за услугу" }
+                ];
+            } else if (type === 'cad') {
+                priceListItems = [
+                    { service: "Установка AutoCAD / Civil 3D", desc: "Полный пакет", price: 1200, isFrom: true, unit: "за услугу" },
+                    { service: "Установка 3ds Max + V-Ray / Corona", desc: "С библиотеками", price: 1500, isFrom: true, unit: "за услугу" },
+                    { service: "Установка Archicad и Revit", desc: "BIM проектирование", price: 1400, isFrom: true, unit: "за услугу" },
+                    { service: "Установка SolidWorks / Компас 3D", desc: "Машиностроение", price: 1300, isFrom: true, unit: "за услугу" },
+                    { service: "Настройка Базис-Мебельщик и Artcam", desc: "Для производства мебели", price: 1600, isFrom: true, unit: "за услугу" }
+                ];
+            }
+            renderPriceListTable();
+            showToast('Пресет загружен', 'Нажмите "Применить ко всем", чтобы обновить базу.', 'info');
+        }
+
+        // SINGLE AD EDIT MODAL
+        function openEditModal(origIndex) {
+            const ad = allAds[origIndex];
+            if (!ad) return;
+
+            document.getElementById('editAdIndex').value = origIndex;
+            document.getElementById('editAdId').value = ad.Id || '';
+            document.getElementById('editAdAvitoId').value = ad.AvitoId || '';
+            document.getElementById('editAdPrice').value = ad.Price || '';
+            document.getElementById('editAdTitle').value = ad.Title || '';
+            document.getElementById('editAdAddress').value = ad.Address || '';
+            document.getElementById('editAdImages').value = ad.ImageUrls || '';
+            document.getElementById('editAdPriceList').value = ad.PriceList || '';
+            document.getElementById('editAdDescription').value = ad.Description || '';
+
+            // Render images preview inside modal
+            const imgContainer = document.getElementById('editImagesPreview');
+            imgContainer.innerHTML = '';
+            const urls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+            urls.forEach((u, i) => {
+                const imgBox = document.createElement('div');
+                imgBox.className = 'w-14 h-14 flex-shrink-0 rounded bg-gray-800 border border-gray-700 overflow-hidden relative';
+                imgBox.innerHTML = `
+                    <img src="${u}" class="w-full h-full object-cover">
+                    <span class="absolute bottom-0 right-0 bg-black/70 text-[9px] px-1 text-white">${i + 1}</span>
+                `;
+                imgContainer.appendChild(imgBox);
+            });
+
+            document.getElementById('editAdModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editAdModal').classList.add('hidden');
+        }
+
+        function saveSingleAd() {
+            const idx = parseInt(document.getElementById('editAdIndex').value);
+            if (isNaN(idx) || !allAds[idx]) return;
+
+            const ad = allAds[idx];
+            ad.AvitoId = document.getElementById('editAdAvitoId').value.trim();
+            ad.Price = document.getElementById('editAdPrice').value.trim();
+            ad.Title = document.getElementById('editAdTitle').value.trim();
+            ad.Address = document.getElementById('editAdAddress').value.trim();
+            ad.ImageUrls = document.getElementById('editAdImages').value.trim();
+            ad.PriceList = document.getElementById('editAdPriceList').value.trim();
+            ad.Description = document.getElementById('editAdDescription').value;
+
+            closeEditModal();
+            showToast('Сохранено', `Объявление ${ad.Id} успешно обновлено!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+            updateGlobalStats();
+        }
+
+        // BULK EDIT MODAL / ACTIONS
+        function bulkEditSelected() {
+            if (selectedIndices.size === 0) return;
+            switchTab('bulk');
+        }
+
+        function applyBulkPriceFixed() {
+            const val = document.getElementById('bulkPriceFixed').value.trim();
+            if (!val) return;
+            let count = 0;
+            const targets = selectedIndices.size > 0 ? Array.from(selectedIndices).map(i => allAds[i]) : allAds;
+            targets.forEach(ad => {
+                ad.Price = val;
+                count++;
+            });
+            showToast('Цены обновлены', `Цена ${val} ₽ установлена в ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function applyBulkPricePercent() {
+            const pct = parseFloat(document.getElementById('bulkPricePercent').value.trim());
+            if (isNaN(pct)) return;
+            let count = 0;
+            const targets = selectedIndices.size > 0 ? Array.from(selectedIndices).map(i => allAds[i]) : allAds;
+            targets.forEach(ad => {
+                const p = parseFloat(ad.Price) || 0;
+                if (p > 0) {
+                    ad.Price = Math.round(p * (1 + pct / 100)).toString();
+                    count++;
+                }
+            });
+            showToast('Цены обновлены', `Цены скорректированы на ${pct}% в ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function applyBulkContacts() {
+            const phone = document.getElementById('bulkPhone').value.trim();
+            const cm = document.getElementById('bulkContactMethod').value;
+            let count = 0;
+            const targets = selectedIndices.size > 0 ? Array.from(selectedIndices).map(i => allAds[i]) : allAds;
+            targets.forEach(ad => {
+                if (phone) ad.ContactPhone = phone;
+                if (cm) ad.ContactMethod = cm;
+                count++;
+            });
+            showToast('Контакты обновлены', `Контакты обновлены в ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function applyBulkSchedule() {
+            const from = document.getElementById('bulkTimeFrom').value.trim();
+            const to = document.getElementById('bulkTimeTo').value.trim();
+            const days = document.getElementById('bulkDays').value.trim();
+            let count = 0;
+            const targets = selectedIndices.size > 0 ? Array.from(selectedIndices).map(i => allAds[i]) : allAds;
+            targets.forEach(ad => {
+                if (from) ad.WorkTimeFrom = from;
+                if (to) ad.WorkTimeTo = to;
+                if (days) ad.WorkDays = days;
+                count++;
+            });
+            showToast('График обновлен', `График обновлен в ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        // XML GENERATION
+        function buildFullXmlString() {
+            const xmlLines = [
+                '<?xml version="1.0" encoding="utf-8"?>',
+                '<Ads formatVersion="3" target="Avito.ru">'
+            ];
+
+            allAds.forEach(ad => {
+                xmlLines.push('	<Ad>');
+                xmlLines.push(`		<Category>${escapeXml(ad.Category || 'Предложение услуг')}</Category>`);
+                if (ad.Price) xmlLines.push(`		<Price>${escapeXml(ad.Price)}</Price>`);
+
+                const imgUrls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                if (imgUrls.length > 0) {
+                    xmlLines.push('		<Images>');
+                    imgUrls.slice(0, 10).forEach(u => {
+                        xmlLines.push(`			<Image url="${escapeXml(u)}"/>`);
+                    });
+                    xmlLines.push('		</Images>');
+                }
+
+                xmlLines.push(`		<ContactMethod>${escapeXml(ad.ContactMethod || 'По телефону и в сообщениях')}</ContactMethod>`);
+                
+                ['Promo', 'PromoAutoOptions', 'PromoManualOptions'].forEach(f => {
+                    if (ad[f]) xmlLines.push(`		<${f}>${escapeXml(ad[f])}</${f}>`);
+                });
+
+                xmlLines.push(`		<Id>${escapeXml(ad.Id)}</Id>`);
+                if (ad.DateBegin) xmlLines.push(`		<DateBegin>${escapeXml(ad.DateBegin)}</DateBegin>`);
+                const de = ad.DateEnd || ad.AvitoDateEnd;
+                if (de) xmlLines.push(`		<DateEnd>${escapeXml(de)}</DateEnd>`);
+
+                xmlLines.push(`		<ListingFee>${escapeXml(ad.ListingFee || 'Package')}</ListingFee>`);
+                if (ad.AdStatus) xmlLines.push(`		<AdStatus>${escapeXml(ad.AdStatus)}</AdStatus>`);
+                if (ad.AvitoId) xmlLines.push(`		<AvitoId>${escapeXml(ad.AvitoId)}</AvitoId>`);
+                if (ad.ManagerName) xmlLines.push(`		<ManagerName>${escapeXml(ad.ManagerName)}</ManagerName>`);
+                if (ad.ContactPhone) xmlLines.push(`		<ContactPhone>${escapeXml(ad.ContactPhone)}</ContactPhone>`);
+                xmlLines.push(`		<Title>${escapeXml(ad.Title || '')}</Title>`);
+
+                if (ad.Description) {
+                    xmlLines.push(`		<Description><![CDATA[${ad.Description}]]></Description>`);
+                } else {
+                    xmlLines.push('		<Description></Description>');
+                }
+
+                if (ad.Address) xmlLines.push(`		<Address>${escapeXml(ad.Address)}</Address>`);
+                if (ad.Latitude) xmlLines.push(`		<Latitude>${escapeXml(ad.Latitude)}</Latitude>`);
+                if (ad.Longitude) xmlLines.push(`		<Longitude>${escapeXml(ad.Longitude)}</Longitude>`);
+                if (ad.InternetCalls) xmlLines.push(`		<InternetCalls>${escapeXml(ad.InternetCalls)}</InternetCalls>`);
+                if (ad.CallsDevices) xmlLines.push(`		<CallsDevices>${escapeXml(ad.CallsDevices)}</CallsDevices>`);
+                if (ad.ServiceType) xmlLines.push(`		<ServiceType>${escapeXml(ad.ServiceType)}</ServiceType>`);
+                if (ad.ServiceSubtype) xmlLines.push(`		<ServiceSubtype>${escapeXml(ad.ServiceSubtype)}</ServiceSubtype>`);
+
+                ['WorkExperience', 'Place', 'WorkWithContract', 'Guarantee', 'WorkDays', 'WorkTimeFrom', 'WorkTimeTo'].forEach(f => {
+                    if (ad[f]) xmlLines.push(`		<${f}>${escapeXml(ad[f])}</${f}>`);
+                });
+
+                if (ad.PriceList && ad.PriceList.trim()) {
+                    xmlLines.push(`		<PriceList><![CDATA[${ad.PriceList.trim()}]]></PriceList>`);
+                }
+
+                if (ad.VideoURL) xmlLines.push(`		<VideoURL>${escapeXml(ad.VideoURL)}</VideoURL>`);
+
+                xmlLines.push('	</Ad>');
+            });
+
+            xmlLines.push('</Ads>');
+            return xmlLines.join('\n');
+        }
+
+        function renderXmlPreview() {
+            const previewEl = document.getElementById('xmlCodePreview');
+            if (!previewEl) return;
+            
+            // Render first 2 ads for speed in preview
+            const sampleAds = allAds.slice(0, 2);
+            const sampleXml = [
+                '<?xml version="1.0" encoding="utf-8"?>',
+                '<Ads formatVersion="3" target="Avito.ru">'
+            ];
+            sampleAds.forEach(ad => {
+                sampleXml.push('	<Ad>');
+                sampleXml.push(`		<Category>${escapeXml(ad.Category || 'Предложение услуг')}</Category>`);
+                sampleXml.push(`		<Price>${escapeXml(ad.Price || '')}</Price>`);
+                sampleXml.push('		<Images>');
+                const imgUrls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                imgUrls.slice(0, 3).forEach(u => sampleXml.push(`			<Image url="${escapeXml(u)}"/>`));
+                if (imgUrls.length > 3) sampleXml.push(`			<!-- и еще ${imgUrls.length - 3} фото -->`);
+                sampleXml.push('		</Images>');
+                sampleXml.push(`		<Id>${escapeXml(ad.Id)}</Id>`);
+                sampleXml.push(`		<Title>${escapeXml(ad.Title)}</Title>`);
+                sampleXml.push(`		<Address>${escapeXml(ad.Address)}</Address>`);
+                if (ad.PriceList) sampleXml.push(`		<PriceList><![CDATA[${ad.PriceList.split('\n')[0]}...]]></PriceList>`);
+                sampleXml.push('		<!-- ... остальные параметры ... -->');
+                sampleXml.push('	</Ad>');
+            });
+            sampleXml.push(`	<!-- ... и ещё ${allAds.length - sampleAds.length} объявлений ... -->`);
+            sampleXml.push('</Ads>');
+
+            previewEl.value = sampleXml.join('\n');
+        }
+
+        function downloadXmlFeed() {
+            const fullXml = buildFullXmlString();
+            const blob = new Blob([fullXml], { type: 'application/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'avito_feed.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Файл скачан', 'avito_feed.xml успешно сгенерирован и сохранён!', 'success');
+        }
+
+        function copyXmlCode() {
+            const fullXml = buildFullXmlString();
+            navigator.clipboard.writeText(fullXml).then(() => {
+                showToast('Скопировано', 'Полный XML код скопирован в буфер обмена', 'info');
+            });
+        }
+
+        function runValidator() {
+            const resEl = document.getElementById('validationResult');
+            let errors = [];
+            let warnings = [];
+
+            if (allAds.length === 0) {
+                errors.push('В фиде нет ни одного объявления!');
+            }
+
+            const seenIds = new Set();
+            allAds.forEach((ad, i) => {
+                if (!ad.Id) errors.push(`Объявление #${i + 1}: отсутствует Id`);
+                if (seenIds.has(ad.Id)) errors.push(`Объявление #${i + 1}: дубликат Id '${ad.Id}'`);
+                seenIds.add(ad.Id);
+
+                if (!ad.Title) errors.push(`Объявление #${i + 1}: отсутствует Заголовок`);
+                if (ad.Title && ad.Title.length > 50) warnings.push(`Объявление #${i + 1} (${ad.Id}): Заголовок > 50 симв. (${ad.Title.length})`);
+                if (!ad.Description) errors.push(`Объявление #${i + 1}: отсутствует Описание`);
+                if (!ad.Address) errors.push(`Объявление #${i + 1}: отсутствует Адрес`);
+
+                const imgUrls = (ad.ImageUrls || '').split('|').map(s => s.trim()).filter(Boolean);
+                if (imgUrls.length === 0) errors.push(`Объявление #${i + 1}: нет фотографий`);
+            });
+
+            if (errors.length === 0) {
+                resEl.className = 'p-4 rounded-lg bg-emerald-950/50 border border-emerald-800/80 text-emerald-200 flex items-start space-x-3 text-sm';
+                resEl.innerHTML = `
+                    <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5 text-base"></i>
+                    <div>
+                        <div class="font-bold">Структура фида полностью валидна (295 объявлений)!</div>
+                        <div class="text-xs text-emerald-300/80 mt-0.5">Ошибок не обнаружено. Фид готов к загрузке в автозагрузку Авито.</div>
+                    </div>
+                `;
+                showToast('Валидация успешна', 'Фид готов к автозагрузке Авито!', 'success');
+            } else {
+                resEl.className = 'p-4 rounded-lg bg-red-950/50 border border-red-800/80 text-red-200 flex items-start space-x-3 text-sm';
+                resEl.innerHTML = `
+                    <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5 text-base"></i>
+                    <div>
+                        <div class="font-bold">Обнаружены ошибки (${errors.length}):</div>
+                        <div class="text-xs text-red-300 mt-1 max-h-32 overflow-y-auto">${errors.slice(0, 10).join('<br>')}</div>
+                    </div>
+                `;
+                showToast('Ошибка валидации', `Найдено ${errors.length} ошибок`, 'error');
+            }
+        }
+
+        // GITHUB SYNC MODAL & API
+        function openGithubSyncModal() {
+            document.getElementById('githubModal').classList.remove('hidden');
+        }
+
+        function closeGithubModal() {
+            document.getElementById('githubModal').classList.add('hidden');
+        }
+
+        function loadGithubSettings() {
+            const token = localStorage.getItem('avito_gh_token');
+            const owner = localStorage.getItem('avito_gh_owner');
+            const repo = localStorage.getItem('avito_gh_repo');
+            const branch = localStorage.getItem('avito_gh_branch');
+            const path = localStorage.getItem('avito_gh_path');
+
+            if (token) document.getElementById('ghToken').value = token;
+            if (owner) document.getElementById('ghOwner').value = owner;
+            if (repo) document.getElementById('ghRepo').value = repo;
+            if (branch) document.getElementById('ghBranch').value = branch;
+            if (path) document.getElementById('ghFilePath').value = path;
+        }
+
+        function saveGithubSettings() {
+            localStorage.setItem('avito_gh_token', document.getElementById('ghToken').value.trim());
+            localStorage.setItem('avito_gh_owner', document.getElementById('ghOwner').value.trim());
+            localStorage.setItem('avito_gh_repo', document.getElementById('ghRepo').value.trim());
+            localStorage.setItem('avito_gh_branch', document.getElementById('ghBranch').value.trim() || 'main');
+            localStorage.setItem('avito_gh_path', document.getElementById('ghFilePath').value.trim() || 'avito_feed.xml');
+        }
+
+        async function testGithubConnection() {
+            saveGithubSettings();
+            const token = document.getElementById('ghToken').value.trim();
+            const owner = document.getElementById('ghOwner').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            const box = document.getElementById('ghStatusBox');
+
+            if (!token || !owner || !repo) {
+                showToast('Ошибка', 'Заполните токен, владельца и репозиторий', 'error');
+                return;
+            }
+
+            box.classList.remove('hidden');
+            box.className = 'p-3 rounded text-xs font-mono bg-gray-800 text-gray-300';
+            box.innerText = 'Проверка подключения к GitHub API...';
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    box.className = 'p-3 rounded text-xs font-mono bg-emerald-950 text-emerald-300 border border-emerald-800';
+                    box.innerText = `[OK] Репозиторий найден: ${data.full_name} (${data.private ? 'Private' : 'Public'})`;
+                    showToast('Связь установлена', `Репозиторий ${owner}/${repo} доступен!`, 'success');
+                } else {
+                    const err = await res.json();
+                    box.className = 'p-3 rounded text-xs font-mono bg-red-950 text-red-300 border border-red-800';
+                    box.innerText = `[ОШИБКА] ${res.status}: ${err.message || 'Доступ отклонен'}`;
+                }
+            } catch (e) {
+                box.className = 'p-3 rounded text-xs font-mono bg-red-950 text-red-300 border border-red-800';
+                box.innerText = `[Сетевая ошибка]: ${e.message}`;
+            }
+        }
+
+        async function pushFeedToGithub() {
+            saveGithubSettings();
+            const token = document.getElementById('ghToken').value.trim();
+            const owner = document.getElementById('ghOwner').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            const branch = document.getElementById('ghBranch').value.trim() || 'main';
+            const path = document.getElementById('ghFilePath').value.trim() || 'avito_feed.xml';
+            const box = document.getElementById('ghStatusBox');
+
+            if (!token || !owner || !repo) {
+                showToast('Ошибка', 'Заполните токен, владельца и репозиторий', 'error');
+                return;
+            }
+
+            box.classList.remove('hidden');
+            box.className = 'p-3 rounded text-xs font-mono bg-gray-800 text-gray-300';
+            box.innerText = 'Подготовка XML и получение SHA существующего файла...';
+
+            try {
+                // 1. Get current file SHA if exists
+                let sha = null;
+                const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (getRes.ok) {
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
+                }
+
+                // 2. Build full XML
+                const xmlContent = buildFullXmlString();
+                // Base64 encode UTF-8
+                const base64Content = btoa(unescape(encodeURIComponent(xmlContent)));
+
+                box.innerText = 'Отправка коммита в GitHub...';
+
+                // 3. Put content
+                const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update Avito XML feed (${allAds.length} ads)`,
+                        content: base64Content,
+                        branch: branch,
+                        sha: sha || undefined
+                    })
+                });
+
+                if (putRes.ok) {
+                    box.className = 'p-3 rounded text-xs font-mono bg-emerald-950 text-emerald-300 border border-emerald-800';
+                    box.innerHTML = `[УСПЕХ] Фид успешно опубликован в GitHub!<br>Ссылка на фид для Авито:<br><strong>https://${owner}.github.io/${repo}/${path}</strong>`;
+                    showToast('Опубликовано!', 'Фид обновлен на GitHub. Авито обновит объявления по расписанию.', 'success');
+                } else {
+                    const err = await putRes.json();
+                    box.className = 'p-3 rounded text-xs font-mono bg-red-950 text-red-300 border border-red-800';
+                    box.innerText = `[ОШИБКА ПУБЛИКАЦИИ] ${putRes.status}: ${err.message}`;
+                }
+            } catch (e) {
+                box.className = 'p-3 rounded text-xs font-mono bg-red-950 text-red-300 border border-red-800';
+                box.innerText = `[Сетевая ошибка]: ${e.message}`;
+            }
+        }
+
+        // FILE IMPORT (XML / Excel)
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const name = file.name.toLowerCase();
+            const reader = new FileReader();
+
+            if (name.endsWith('.xml')) {
+                reader.onload = (event) => {
+                    parseXmlFeed(event.target.result);
+                };
+                reader.readAsText(file, 'utf-8');
+            } else {
+                showToast('Импорт', 'Для импорта Excel используйте локальный python-скрипт excel_to_xml.py или загрузите XML.', 'info');
+            }
+        }
+
+        function parseXmlFeed(xmlText) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                const adNodes = xmlDoc.querySelectorAll('Ad');
+
+                if (adNodes.length === 0) {
+                    showToast('Ошибка', 'В файле не найдено тегов <Ad>', 'error');
+                    return;
+                }
+
+                const importedAds = [];
+                adNodes.forEach(node => {
+                    const getTag = (t) => {
+                        const el = node.querySelector(t);
+                        return el ? el.textContent.trim() : '';
+                    };
+
+                    const images = [];
+                    node.querySelectorAll('Images Image').forEach(img => {
+                        const u = img.getAttribute('url');
+                        if (u) images.push(u);
+                    });
+
+                    importedAds.push({
+                        Id: getTag('Id'),
+                        AvitoId: getTag('AvitoId'),
+                        ListingFee: getTag('ListingFee') || 'Package',
+                        Category: getTag('Category') || 'Предложение услуг',
+                        Title: getTag('Title'),
+                        Price: getTag('Price'),
+                        Description: getTag('Description'),
+                        Address: getTag('Address'),
+                        ServiceType: getTag('ServiceType'),
+                        ServiceSubtype: getTag('ServiceSubtype'),
+                        ContactPhone: getTag('ContactPhone'),
+                        ContactMethod: getTag('ContactMethod'),
+                        ManagerName: getTag('ManagerName'),
+                        WorkExperience: getTag('WorkExperience'),
+                        Place: getTag('Place'),
+                        WorkWithContract: getTag('WorkWithContract'),
+                        Guarantee: getTag('Guarantee'),
+                        WorkDays: getTag('WorkDays'),
+                        WorkTimeFrom: getTag('WorkTimeFrom'),
+                        WorkTimeTo: getTag('WorkTimeTo'),
+                        PriceList: getTag('PriceList'),
+                        ImageUrls: images.join(' | ')
+                    });
+                });
+
+                allAds = importedAds;
+                selectedIndices.clear();
+                initApp();
+                showToast('Успех', `Загружено ${allAds.length} объявлений из XML!`, 'success');
+            } catch (err) {
+                showToast('Ошибка разбора', err.message, 'error');
+            }
+        }
+
+        // UTILITIES
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function escapeXml(text) {
+            if (!text) return '';
+            return text.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+
+        function showToast(title, msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-900/90 border-emerald-700 text-emerald-100' :
+                            type === 'error' ? 'bg-red-900/90 border-red-700 text-red-100' :
+                            type === 'warning' ? 'bg-amber-900/90 border-amber-700 text-amber-100' :
+                            'bg-blue-900/90 border-blue-700 text-blue-100';
+
+            const iconClass = type === 'success' ? 'fa-circle-check text-emerald-400' :
+                              type === 'error' ? 'fa-circle-xmark text-red-400' :
+                              type === 'warning' ? 'fa-triangle-exclamation text-amber-400' :
+                              'fa-circle-info text-blue-400';
+
+            toast.className = `${bgClass} border rounded-lg p-3 shadow-lg pointer-events-auto flex items-start space-x-2.5 max-w-sm transition-all duration-300 opacity-0 translate-y-2`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} mt-0.5"></i>
+                <div class="text-xs">
+                    <div class="font-bold">${title}</div>
+                    <div>${msg}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
