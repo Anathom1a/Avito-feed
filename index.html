@@ -116,8 +116,14 @@
             <button onclick="switchTab('photos')" id="tabBtn-photos" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
                 <i class="fa-solid fa-images mr-2 text-amber-400"></i> Массовое обновление Фото
             </button>
-            <button onclick="switchTab('pricelist')" id="tabBtn-pricelist" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
-                <i class="fa-solid fa-tags mr-2 text-emerald-400"></i> Конструктор Прайс-Листа
+            <button onclick="switchTab('pricelist')" id="tabBtn-pricelist" class="tab-btn px-3.5 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center whitespace-nowrap">
+                <i class="fa-solid fa-tags mr-1.5 text-emerald-400"></i> Прайс-Лист
+            </button>
+            <button onclick="switchTab('titles-video')" id="tabBtn-titles-video" class="tab-btn px-3.5 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center whitespace-nowrap">
+                <i class="fa-solid fa-heading mr-1.5 text-sky-400"></i> Названия & Видео
+            </button>
+            <button onclick="switchTab('spintax')" id="tabBtn-spintax" class="tab-btn px-3.5 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center whitespace-nowrap">
+                <i class="fa-solid fa-dice mr-1.5 text-fuchsia-400"></i> Рандомизатор & Антибан
             </button>
             <button onclick="switchTab('bulk')" id="tabBtn-bulk" class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282c34] flex items-center">
                 <i class="fa-solid fa-wand-magic-sparkles mr-2 text-purple-400"></i> Пакетное редактирование
@@ -354,6 +360,177 @@ https://example.com/photo3.jpg" class="w-full bg-[#21252b] border border-gray-70
                                 <i class="fa-solid fa-filter mr-2"></i> Только к выбранным (<span id="plSelectedCount">0</span>)
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+        <!-- TAB: TITLES & VIDEO HUB -->
+        <section id="tab-titles-video" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fa-solid fa-heading mr-2.5 text-sky-400"></i> Массовое обновление Названий (Title) и Видео (VideoURL)
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Меняйте названия всех 295 объявлений разом с подстановкой города и Spintax, а также прикрепляйте видеоролики к карточкам.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Title Generator -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <i class="fa-solid fa-pen mr-2 text-sky-400"></i> Генератор названий (Title)
+                            </h3>
+                            <span class="text-xs bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded">До 100 символов</span>
+                        </div>
+                        <p class="text-xs text-gray-400">
+                            Поддерживает <strong>Spintax</strong> <code>{Вариант 1|Вариант 2}</code> и <strong>макросы</strong>:
+                            <code class="text-sky-300 font-mono">{city}</code> — город, 
+                            <code class="text-sky-300 font-mono">{price}</code> — цена,
+                            <code class="text-sky-300 font-mono">{id}</code> — ID.
+                        </p>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-300">Шаблон названия:</label>
+                            <input type="text" id="titleTemplateInput" value="{Установка|Настройка} {Программ|ПО} {Бессрочно|под ключ}. Компьютерная помощь {city}" class="w-full bg-[#21252b] border border-gray-700 rounded-lg p-2.5 text-xs text-gray-200 focus:outline-none focus:border-sky-500 font-mono" oninput="updateTitlePreview()">
+                        </div>
+
+                        <div class="bg-[#21252b] p-3 rounded-lg border border-gray-800 space-y-1.5">
+                            <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Примеры генерации для разных городов:</div>
+                            <div id="titlePreviewList" class="space-y-1 text-xs font-mono text-gray-300"></div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <button onclick="applyBulkTitles(true)" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center shadow-md shadow-sky-950/60">
+                                <i class="fa-solid fa-check-double mr-2"></i> Применить названия ко ВСЕМ 295
+                            </button>
+                            <button onclick="applyBulkTitles(false)" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                                <i class="fa-solid fa-list-check mr-2"></i> Только к выбранным (<span id="titleSelectedCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VideoURL Manager -->
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <i class="fa-brands fa-youtube mr-2 text-red-500"></i> Добавление видео (VideoURL)
+                            </h3>
+                            <span class="text-xs bg-red-950 text-red-300 border border-red-800 px-2 py-0.5 rounded">YouTube / RuTube / VK</span>
+                        </div>
+                        <p class="text-xs text-gray-400">
+                            Объявления с видео получают в среднем на 20-30% больше откликов. Видео отображается в галерее фото на Авито.
+                        </p>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-300">Ссылка на видео (или список ссылок для ротации через разделитель |):</label>
+                            <textarea id="bulkVideoInput" rows="4" placeholder="https://www.youtube.com/watch?v=ваш_ролик
+https://rutube.ru/video/ваш_ролик" class="w-full bg-[#21252b] border border-gray-700 rounded-lg p-2.5 text-xs font-mono text-gray-200 focus:outline-none focus:border-red-500"></textarea>
+                        </div>
+
+                        <div class="bg-[#21252b] p-3 rounded-lg border border-gray-800 text-xs text-gray-400">
+                            Тег в XML: <code class="text-red-400 font-mono">&lt;VideoURL&gt;https://www.youtube.com/watch?v=...&lt;/VideoURL&gt;</code>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <button onclick="applyBulkVideos(true, false)" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center shadow-md shadow-red-950/60">
+                                <i class="fa-solid fa-play mr-2"></i> Установить видео для ВСЕХ 295
+                            </button>
+                            <button onclick="applyBulkVideos(false, false)" class="bg-[#2c313a] hover:bg-[#353b45] text-gray-300 border border-gray-600 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                                Только к выбранным
+                            </button>
+                            <button onclick="applyBulkVideos(true, true)" class="bg-gray-800 hover:bg-gray-700 text-red-400 border border-red-900/50 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center" title="Удалить тег VideoURL">
+                                <i class="fa-solid fa-trash mr-1"></i> Очистить видео
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: SPINTAX & ANTI-BAN HUB -->
+        <section id="tab-spintax" class="tab-content hidden space-y-6">
+            <div class="bg-[#21252b] p-6 rounded-xl border border-[#313640] shadow-sm space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fa-solid fa-dice mr-2.5 text-fuchsia-400"></i> Рандомизатор текстов & Защита от блокировок (Антибан)
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Профессиональная уникализация объявлений как в Avi-tool: генерация уникальных наборов букв/хэшей (например: <code>SADQGXZTEQS</code>) и Spintax шаблоны.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-fuchsia-600 text-xs flex items-center justify-center mr-2">1</span>
+                                Генератор уникальных хэш-кодов (Артикулов)
+                            </h3>
+                            <span class="text-xs bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-800 px-2 py-0.5 rounded">Anti-Ban</span>
+                        </div>
+                        <p class="text-xs text-gray-400">
+                            В конце ваших существующих объявлений сейчас стоят старые коды (например: <code>KAHYPPJMGB</code>). Этот инструмент в 1 клик обновляет их на новые уникальные последовательности букв (например <code>SADQGXZTEQS</code>) во всех 295 объявлениях без изменения основного текста!
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-300 mb-1">Длина кода (символов):</label>
+                                <input type="number" id="antiBanCodeLen" value="10" min="6" max="15" class="w-full bg-[#21252b] border border-gray-700 rounded p-2 text-xs text-gray-200" onchange="generateSampleAntiBanCodes()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-300 mb-1">Тип символов:</label>
+                                <select id="antiBanCodeType" class="w-full bg-[#21252b] border border-gray-700 rounded p-2 text-xs text-gray-200" onchange="generateSampleAntiBanCodes()">
+                                    <option value="letters">Только заглавные буквы (A-Z)</option>
+                                    <option value="alphanumeric">Буквы и цифры (A-Z, 0-9)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#21252b] p-3 rounded-lg border border-gray-800 text-xs">
+                            <span class="text-gray-400">Примеры свежих кодов:</span>
+                            <div class="mt-1 font-mono text-fuchsia-400 font-bold" id="sampleAntiBanCodes">SADQGXZTEQS • BTYWKLOPMZA • XQRMNAZEDCF</div>
+                        </div>
+
+                        <button onclick="refreshAllAntiBanCodes()" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center shadow-md shadow-fuchsia-950/60">
+                            <i class="fa-solid fa-arrows-rotate mr-2"></i> Обновить уникальные коды во ВСЕХ 295 объявлениях
+                        </button>
+                    </div>
+
+                    <div class="bg-[#181a1f] p-5 rounded-lg border border-gray-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-semibold text-white flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-purple-600 text-xs flex items-center justify-center mr-2">2</span>
+                                Spintax рандомизатор всего текста
+                            </h3>
+                            <span class="text-xs bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded">Спинтакс</span>
+                        </div>
+                        <p class="text-xs text-gray-400">
+                            Задайте шаблон со спинтаксом <code>{слово1|слово2}</code>. Макросы: <code class="text-purple-300">{city}</code>, <code class="text-purple-300">{price}</code>, <code class="text-purple-300">{rand_code}</code> (автоматически вставит уникальный набор букв).
+                        </p>
+
+                        <textarea id="spintaxTemplateInput" rows="5" class="w-full bg-[#21252b] border border-gray-700 rounded-lg p-2.5 text-xs font-mono text-gray-200 focus:outline-none focus:border-purple-500" placeholder="<p>{Установка|Инсталляция} любых программ {от 15 минут|в день обращения} в г. {city}.
+✔️ {Железная гарантия 12 месяцев|Гарантия качества 1 год}
+✔️ Оплата только после проверки!
+
+📲 {Пишите|Звоните} прямо сейчас!
+<br><br>
+{rand_code}</p>"></textarea>
+
+                        <div class="flex space-x-2">
+                            <button onclick="previewSpintaxDescriptions()" class="bg-[#2c313a] hover:bg-[#353b45] text-purple-300 border border-purple-800/60 px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center">
+                                <i class="fa-solid fa-eye mr-1.5"></i> Тест генерации
+                            </button>
+                            <button onclick="applySpintaxDescriptions(true)" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center flex-1 justify-center">
+                                <i class="fa-solid fa-wand-magic mr-1.5"></i> Применить ко ВСЕМ 295 объявлениям
+                            </button>
+                        </div>
+
+                        <div id="spintaxPreviewBox" class="hidden bg-[#21252b] p-3 rounded-lg border border-gray-800 text-xs font-mono text-gray-300 max-h-36 overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
@@ -756,7 +933,218 @@ window.INITIAL_ADS = [{"Id": "zxa9co733a80", "ListingFee": "Package", "AvitoId":
             }
         });
 
+        
+        // SPINTAX & MACRO UTILITIES
+        function spinText(text) {
+            const pattern = /\{([^{}]+)\}/;
+            let res = text;
+            while (pattern.test(res)) {
+                res = res.replace(pattern, (match, choices) => {
+                    const arr = choices.split('|');
+                    return arr[Math.floor(Math.random() * arr.length)];
+                });
+            }
+            return res;
+        }
+
+        function extractCity(address) {
+            if (!address) return '';
+            const parts = address.split(',');
+            return parts.length >= 2 ? parts[1].trim() : parts[0].trim();
+        }
+
+        function generateRandCode(length = 10, type = 'letters') {
+            const chars = type === 'alphanumeric' ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let res = '';
+            for (let i = 0; i < length; i++) {
+                res += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return res;
+        }
+
+        // TITLES & VIDEO HUB FUNCTIONS
+        function updateTitlePreview() {
+            const tplInput = document.getElementById('titleTemplateInput');
+            if (!tplInput) return;
+            const tpl = tplInput.value;
+            const container = document.getElementById('titlePreviewList');
+            if (!container) return;
+
+            const sampleCities = ['Ивантеевка', 'Кунгур', 'Владивосток', 'Казань', 'Челябинск'];
+            container.innerHTML = '';
+            sampleCities.forEach(city => {
+                let s = spinText(tpl);
+                s = s.replace(/\{city\}/gi, city).replace(/\{город\}/gi, city).replace(/\{price\}/gi, '180').replace(/\{id\}/gi, 'abc123xyz');
+                s = s.replace(/\s+/g, ' ').trim();
+                const len = s.length;
+                const lenColor = len > 100 ? 'text-red-400' : 'text-gray-400';
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between border-b border-gray-800/60 pb-1';
+                div.innerHTML = `<span>${escapeHtml(s)}</span> <span class="${lenColor} text-[10px] whitespace-nowrap pl-2">(${len} симв.)</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        function applyBulkTitles(forAll) {
+            const tpl = document.getElementById('titleTemplateInput').value.trim();
+            if (!tpl) {
+                showToast('Ошибка', 'Введите шаблон названия', 'error');
+                return;
+            }
+
+            let targets = forAll ? allAds : Array.from(selectedIndices).map(i => allAds[i]);
+            if (targets.length === 0) {
+                showToast('Внимание', 'Не выбрано ни одного объявления!', 'warning');
+                return;
+            }
+
+            targets.forEach(ad => {
+                const city = extractCity(ad.Address);
+                let title = spinText(tpl);
+                title = title.replace(/\{city\}/gi, city).replace(/\{город\}/gi, city)
+                             .replace(/\{price\}/gi, ad.Price || '')
+                             .replace(/\{id\}/gi, ad.Id || '')
+                             .replace(/\{manager\}/gi, ad.ManagerName || '');
+                title = title.replace(/\s+/g, ' ').trim();
+                ad.Title = title.substring(0, 100);
+            });
+
+            showToast('Успех', `Названия обновлены во всех ${targets.length} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function applyBulkVideos(forAll, clear) {
+            let targets = forAll ? allAds : Array.from(selectedIndices).map(i => allAds[i]);
+            if (targets.length === 0) {
+                showToast('Внимание', 'Не выбрано ни одного объявления!', 'warning');
+                return;
+            }
+
+            if (clear) {
+                targets.forEach(ad => { delete ad.VideoURL; });
+                showToast('Удалено', `Видео удалено из ${targets.length} объявлений!`, 'info');
+            } else {
+                const raw = document.getElementById('bulkVideoInput').value.trim();
+                const urls = raw.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
+                if (urls.length === 0) {
+                    showToast('Ошибка', 'Введите хотя бы одну ссылку на видео', 'error');
+                    return;
+                }
+                targets.forEach((ad, idx) => {
+                    ad.VideoURL = urls[idx % urls.length];
+                });
+                showToast('Успех', `Видео прикреплено к ${targets.length} объявлениям!`, 'success');
+            }
+
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function generateSampleAntiBanCodes() {
+            const el = document.getElementById('sampleAntiBanCodes');
+            if (!el) return;
+            const len = parseInt(document.getElementById('antiBanCodeLen')?.value || '10');
+            const type = document.getElementById('antiBanCodeType')?.value || 'letters';
+            el.innerText = `${generateRandCode(len, type)} • ${generateRandCode(len, type)} • ${generateRandCode(len, type)}`;
+        }
+
+        function refreshAllAntiBanCodes() {
+            const len = parseInt(document.getElementById('antiBanCodeLen')?.value || '10');
+            const type = document.getElementById('antiBanCodeType')?.value || 'letters';
+
+            let count = 0;
+            allAds.forEach(ad => {
+                let desc = ad.Description || '';
+                const newCode = generateRandCode(len, type);
+                
+                const pattern = /([A-Z0-9]{8,15})(\s*<\/p>|\s*)$/;
+                if (pattern.test(desc)) {
+                    desc = desc.replace(pattern, `${newCode}$2`);
+                } else {
+                    if (desc.endsWith('</p>')) {
+                        desc = desc.slice(0, -4) + `<br> <br> ${newCode}</p>`;
+                    } else {
+                        desc = desc + `\n\n${newCode}`;
+                    }
+                }
+                ad.Description = desc;
+                count++;
+            });
+
+            generateSampleAntiBanCodes();
+            showToast('Антибан обновлен', `Уникальные коды (артикулы) сгенерированы во всех ${count} объявлениях!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
+        function previewSpintaxDescriptions() {
+            const tpl = document.getElementById('spintaxTemplateInput').value.trim();
+            const box = document.getElementById('spintaxPreviewBox');
+            if (!tpl) {
+                showToast('Ошибка', 'Введите Spintax шаблон описания', 'error');
+                return;
+            }
+
+            const len = parseInt(document.getElementById('antiBanCodeLen')?.value || '10');
+            const type = document.getElementById('antiBanCodeType')?.value || 'letters';
+            const city = 'Екатеринбург';
+            const code = generateRandCode(len, type);
+
+            let spun = spinText(tpl);
+            spun = spun.replace(/\{city\}/gi, city).replace(/\{город\}/gi, city)
+                       .replace(/\{price\}/gi, '180')
+                       .replace(/\{rand_code\}/gi, code).replace(/\{артикул\}/gi, code);
+
+            if (!spun.includes(code)) {
+                if (spun.endsWith('</p>')) spun = spun.slice(0, -4) + `<br> <br> ${code}</p>`;
+                else spun += `\n\n${code}`;
+            }
+
+            box.classList.remove('hidden');
+            box.innerText = spun;
+        }
+
+        function applySpintaxDescriptions(forAll) {
+            const tpl = document.getElementById('spintaxTemplateInput').value.trim();
+            if (!tpl) {
+                showToast('Ошибка', 'Введите Spintax шаблон описания', 'error');
+                return;
+            }
+
+            const len = parseInt(document.getElementById('antiBanCodeLen')?.value || '10');
+            const type = document.getElementById('antiBanCodeType')?.value || 'letters';
+
+            let targets = forAll ? allAds : Array.from(selectedIndices).map(i => allAds[i]);
+            if (targets.length === 0) {
+                showToast('Внимание', 'Не выбрано ни одного объявления!', 'warning');
+                return;
+            }
+
+            targets.forEach(ad => {
+                const city = extractCity(ad.Address);
+                const code = generateRandCode(len, type);
+                let spun = spinText(tpl);
+                spun = spun.replace(/\{city\}/gi, city).replace(/\{город\}/gi, city)
+                           .replace(/\{price\}/gi, ad.Price || '')
+                           .replace(/\{id\}/gi, ad.Id || '')
+                           .replace(/\{rand_code\}/gi, code).replace(/\{артикул\}/gi, code);
+
+                if (!spun.includes(code)) {
+                    if (spun.endsWith('</p>')) spun = spun.slice(0, -4) + `<br> <br> ${code}</p>`;
+                    else spun += `\n\n${code}`;
+                }
+                ad.Description = spun.substring(0, 7500);
+            });
+
+            showToast('Успех', `Уникальные тексты описания сгенерированы для ${targets.length} объявлений!`, 'success');
+            renderAdsTable();
+            renderXmlPreview();
+        }
+
         function initApp() {
+            updateTitlePreview();
+            generateSampleAntiBanCodes();
             populateCityFilter();
             filterAds();
             renderPriceListTable();
@@ -1408,12 +1796,57 @@ window.INITIAL_ADS = [{"Id": "zxa9co733a80", "ListingFee": "Package", "AvitoId":
                 if (ad.ServiceType) xmlLines.push(`		<ServiceType>${escapeXml(ad.ServiceType)}</ServiceType>`);
                 if (ad.ServiceSubtype) xmlLines.push(`		<ServiceSubtype>${escapeXml(ad.ServiceSubtype)}</ServiceSubtype>`);
 
-                ['WorkExperience', 'Place', 'WorkWithContract', 'Guarantee', 'WorkDays', 'WorkTimeFrom', 'WorkTimeTo'].forEach(f => {
-                    if (ad[f]) xmlLines.push(`		<${f}>${escapeXml(ad[f])}</${f}>`);
-                });
+                if (ad.WorkExperience) xmlLines.push(`		<WorkExperience>${escapeXml(ad.WorkExperience)}</WorkExperience>`);
+                
+                if (ad.Place) {
+                    xmlLines.push('		<Place>');
+                    ad.Place.split('|').forEach(p => {
+                        const opt = p.trim();
+                        if (opt) xmlLines.push(`			<Option>${escapeXml(opt)}</Option>`);
+                    });
+                    xmlLines.push('		</Place>');
+                }
+
+                if (ad.WorkWithContract) xmlLines.push(`		<WorkWithContract>${escapeXml(ad.WorkWithContract)}</WorkWithContract>`);
+                if (ad.Guarantee) xmlLines.push(`		<Guarantee>${escapeXml(ad.Guarantee)}</Guarantee>`);
+
+                if (ad.WorkDays) {
+                    xmlLines.push('		<WorkDays>');
+                    ad.WorkDays.split('|').forEach(d => {
+                        const opt = d.trim();
+                        if (opt) xmlLines.push(`			<Option>${escapeXml(opt)}</Option>`);
+                    });
+                    xmlLines.push('		</WorkDays>');
+                }
+
+                if (ad.WorkTimeFrom) xmlLines.push(`		<WorkTimeFrom>${escapeXml(ad.WorkTimeFrom)}</WorkTimeFrom>`);
+                if (ad.WorkTimeTo) xmlLines.push(`		<WorkTimeTo>${escapeXml(ad.WorkTimeTo)}</WorkTimeTo>`);
 
                 if (ad.PriceList && ad.PriceList.trim()) {
-                    xmlLines.push(`		<PriceList><![CDATA[${ad.PriceList.trim()}]]></PriceList>`);
+                    const plLines = ad.PriceList.trim().split(/\r?\n/).filter(Boolean);
+                    if (plLines.length > 0) {
+                        xmlLines.push('		<PriceList>');
+                        plLines.slice(0, 50).forEach(line => {
+                            const parts = line.split('|').map(s => s.trim());
+                            while (parts.length < 5) parts.push('');
+                            let sName = parts[0];
+                            const sTitle = parts[1];
+                            const sPrice = parts[2];
+                            const sFrom = parts[3];
+                            const sType = parts[4] || 'за услугу';
+                            if (!sName && sTitle) sName = 'Своя услуга';
+                            if (sName) {
+                                xmlLines.push('			<Service>');
+                                xmlLines.push(`				<ServiceName>${escapeXml(sName)}</ServiceName>`);
+                                if (sTitle) xmlLines.push(`				<ServiceTitle>${escapeXml(sTitle)}</ServiceTitle>`);
+                                if (sPrice) xmlLines.push(`				<ServicePrice>${escapeXml(sPrice)}</ServicePrice>`);
+                                if (['Да', 'true', 'True', '1'].includes(sFrom)) xmlLines.push('				<ServiceStartingPrice>Да</ServiceStartingPrice>');
+                                xmlLines.push(`				<ServicePriceType>${escapeXml(sType)}</ServicePriceType>`);
+                                xmlLines.push('			</Service>');
+                            }
+                        });
+                        xmlLines.push('		</PriceList>');
+                    }
                 }
 
                 if (ad.VideoURL) xmlLines.push(`		<VideoURL>${escapeXml(ad.VideoURL)}</VideoURL>`);
@@ -1701,6 +2134,31 @@ window.INITIAL_ADS = [{"Id": "zxa9co733a80", "ListingFee": "Package", "AvitoId":
                         if (u) images.push(u);
                     });
 
+                    // Parse nested Place Options
+                    const placeOpts = [];
+                    node.querySelectorAll('Place Option').forEach(o => placeOpts.push(o.textContent.trim()));
+                    const placeVal = placeOpts.length > 0 ? placeOpts.join(' | ') : getTag('Place');
+
+                    // Parse nested WorkDays Options
+                    const dayOpts = [];
+                    node.querySelectorAll('WorkDays Option').forEach(o => dayOpts.push(o.textContent.trim()));
+                    const dayVal = dayOpts.length > 0 ? dayOpts.join(' | ') : getTag('WorkDays');
+
+                    // Parse nested PriceList Services
+                    const parsedPlLines = [];
+                    const services = node.querySelectorAll('PriceList Service');
+                    if (services.length > 0) {
+                        services.forEach(s => {
+                            const sn = s.querySelector('ServiceName')?.textContent.trim() || '';
+                            const st = s.querySelector('ServiceTitle')?.textContent.trim() || '';
+                            const sp = s.querySelector('ServicePrice')?.textContent.trim() || '';
+                            const sf = s.querySelector('ServiceStartingPrice')?.textContent.trim() || 'Нет';
+                            const sType = s.querySelector('ServicePriceType')?.textContent.trim() || 'за услугу';
+                            if (sn) parsedPlLines.push(`${sn}|${st}|${sp}|${sf}|${sType}`);
+                        });
+                    }
+                    const plVal = parsedPlLines.length > 0 ? parsedPlLines.join('\n') : getTag('PriceList');
+
                     importedAds.push({
                         Id: getTag('Id'),
                         AvitoId: getTag('AvitoId'),
@@ -1716,13 +2174,13 @@ window.INITIAL_ADS = [{"Id": "zxa9co733a80", "ListingFee": "Package", "AvitoId":
                         ContactMethod: getTag('ContactMethod'),
                         ManagerName: getTag('ManagerName'),
                         WorkExperience: getTag('WorkExperience'),
-                        Place: getTag('Place'),
+                        Place: placeVal,
                         WorkWithContract: getTag('WorkWithContract'),
                         Guarantee: getTag('Guarantee'),
-                        WorkDays: getTag('WorkDays'),
+                        WorkDays: dayVal,
                         WorkTimeFrom: getTag('WorkTimeFrom'),
                         WorkTimeTo: getTag('WorkTimeTo'),
-                        PriceList: getTag('PriceList'),
+                        PriceList: plVal,
                         ImageUrls: images.join(' | ')
                     });
                 });
